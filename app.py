@@ -34,7 +34,7 @@ if api_key:
         
         # TẠO AI VỚI BÍ KÍP
         model = genai.GenerativeModel(
-            'gemini-1.5-flash-001',
+            'emini-pro',
             system_instruction=my_instruction
         )
 
