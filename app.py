@@ -144,7 +144,7 @@ if api_key:
         
         # TẠO AI VỚI BÍ KÍP
         model = genai.GenerativeModel(
-            'gemini-1.5-flash',
+            'gemini-1.5-flash-latest',
             system_instruction=my_instruction
         )
 
