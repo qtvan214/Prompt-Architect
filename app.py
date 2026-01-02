@@ -1,10 +1,13 @@
 import streamlit as st
 import google.generativeai as genai
 
-# ==========================================
-# 1. DÁN BÍ KÍP CỦA BẠN VÀO GIỮA 3 DẤU NGOẶC KÉP BÊN DƯỚI
-# ==========================================
-system_instruction = """
+# CẤU HÌNH TRANG WEB
+st.set_page_config(page_title="App AI Của Tôi")
+st.title("🤖 Chat với AI")
+
+# BÍ KÍP CỦA BẠN (Dán nội dung vào giữa 2 dấu ngoặc kép bên dưới)
+# Lưu ý: Không xóa 3 dấu ngoặc kép ở đầu và cuối!
+my_instruction = """
 Tôi muốn tạo một App về Prompt Generator. Tôi sẽ đưa cho bạn ý tưởng, vài ý kiến, bạn sẽ giúp tôi viết tạo ra một prompt chuẩn chuyên nghiệp như một chuyên gia viết prompt với 20 năm kinh nghiệm, dùng tạo ảnh, tạo video, tạo bài biết... Giao diện hiện đại, phong cách tương tai.
 Gemini 3 Flash Preview
 Ran for 9s
@@ -129,46 +132,39 @@ App.tsx
 check_circle
 lightbulb_tips
 Suggestions
-
 """
-# ==========================================
 
-st.set_page_config(page_title="My AI App", page_icon="✨")
-st.title("✨ Prompt Architect")
-
-# Nhập API Key (ẩn đi để khách không thấy)
-# Nếu bạn muốn hard-code (gắn cứng) API Key của mình để bán cho khách thì thay dòng dưới
-api_key = st.sidebar.text_input("Nhập API Key", type="password")
+# NHẬP KHÓA API
+api_key = st.text_input("Dán mã API Key của bạn vào đây:", type="password")
 
 if api_key:
     try:
+        # KẾT NỐI GOOGLE
         genai.configure(api_key=api_key)
         
-        # Cấu hình model với "Linh hồn" (System Instruction) của bạn
+        # TẠO AI VỚI BÍ KÍP
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
-            system_instruction=system_instruction  # <--- Đây là dòng quan trọng nhất!
+            'gemini-1.5-flash',
+            system_instruction=my_instruction
         )
 
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
+        # KHUNG CHAT
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = []
 
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+        # Hiện tin nhắn cũ
+        for role, text in st.session_state.chat_history:
+            st.chat_message(role).write(text)
 
-        if prompt := st.chat_input("Nhập câu hỏi..."):
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            st.session_state.messages.append({"role": "user", "content": prompt})
-
-            with st.chat_message("assistant"):
-                # Streamlit sẽ nhớ System Instruction mỗi khi gọi
-                response = model.generate_content(prompt) 
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
+        # Nhập tin nhắn mới
+        if prompt := st.chat_input("Hỏi gì đi bạn..."):
+            st.chat_message("user").write(prompt)
+            st.session_state.chat_history.append(("user", prompt))
+            
+            # AI Trả lời
+            response = model.generate_content(prompt)
+            st.chat_message("ai").write(response.text)
+            st.session_state.chat_history.append(("ai", response.text))
 
     except Exception as e:
-        st.error(f"Lỗi: {e}")
-else:
-    st.warning("Vui lòng nhập API Key để bắt đầu.")
+        st.error(f"Có lỗi xảy ra: {e}")
