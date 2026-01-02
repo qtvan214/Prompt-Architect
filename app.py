@@ -134,7 +134,7 @@ Suggestions
 # ==========================================
 
 st.set_page_config(page_title="My AI App", page_icon="✨")
-st.title("✨ Ứng dụng AI của Tôi")
+st.title("✨ Prompt Architect")
 
 # Nhập API Key (ẩn đi để khách không thấy)
 # Nếu bạn muốn hard-code (gắn cứng) API Key của mình để bán cho khách thì thay dòng dưới
