@@ -1,60 +1,49 @@
 import streamlit as st
 import google.generativeai as genai
 
-# CẤU HÌNH TRANG WEB
-st.set_page_config(page_title="App AI Của Tôi")
-st.title("🤖 Chat với AI")
+st.set_page_config(page_title="Kiểm tra Model", page_icon="🛠")
+st.title("🛠 Công cụ kiểm tra Model Google")
 
-# BÍ KÍP CỦA BẠN (Dán nội dung vào giữa 2 dấu ngoặc kép bên dưới)
-# Lưu ý: Không xóa 3 dấu ngoặc kép ở đầu và cuối!
-my_instruction = """
-Bạn là một Chuyên gia Kỹ thuật Prompt (Prompt Engineer) với 20 năm kinh nghiệm.
-Nhiệm vụ của bạn là giúp người dùng tạo ra các Prompt (câu lệnh) chuyên nghiệp để tạo ảnh, video, và bài viết.
-
-QUY TẮC HOẠT ĐỘNG:
-1. Khi người dùng đưa ý tưởng sơ sài, bạn phải viết lại thành một Prompt chi tiết, chuẩn xác theo cấu trúc tiếng Anh.
-2. Cấu trúc Prompt chuẩn bạn phải xuất ra:
-   - [SUBJECT]: Mô tả chủ thể chi tiết.
-   - [STYLE]: Phong cách nghệ thuật (ví dụ: Cyberpunk, Cinematic, Photorealistic...).
-   - [LIGHTING]: Ánh sáng (ví dụ: Neon lights, Volumetric lighting...).
-   - [COMPOSITION]: Bố cục (ví dụ: Wide angle, Macro, Rule of thirds...).
-   - [QUALITY]: Các từ khóa chất lượng (8k, highly detailed, HDR).
-
-3. Nếu người dùng tải ảnh lên hoặc yêu cầu tạo video, hãy thêm các tham số chuyển động (Motion) phù hợp.
-4. Giữ thái độ chuyên nghiệp, ngắn gọn, tập trung vào kết quả.
-"""
-
-# NHẬP KHÓA API
-api_key = st.text_input("Dán mã API Key của bạn vào đây:", type="password")
+api_key = st.text_input("Nhập API Key của bạn để kiểm tra:", type="password")
 
 if api_key:
     try:
-        # KẾT NỐI GOOGLE
+        # 1. Kết nối thử
         genai.configure(api_key=api_key)
+        st.info("Đang kết nối tới Google...")
         
-        # TẠO AI VỚI BÍ KÍP
-        model = genai.GenerativeModel(
-            'emini-pro',
-            system_instruction=my_instruction
-        )
-
-        # KHUNG CHAT
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = []
-
-        # Hiện tin nhắn cũ
-        for role, text in st.session_state.chat_history:
-            st.chat_message(role).write(text)
-
-        # Nhập tin nhắn mới
-        if prompt := st.chat_input("Hỏi gì đi bạn..."):
-            st.chat_message("user").write(prompt)
-            st.session_state.chat_history.append(("user", prompt))
+        # 2. Lấy danh sách Model thực tế
+        models = genai.list_models()
+        
+        found_models = []
+        st.write("### 👇 Danh sách Model mà Key của bạn nhìn thấy:")
+        
+        # Lọc ra các model dùng để chat
+        for m in models:
+            if 'generateContent' in m.supported_generation_methods:
+                model_name = m.name.replace('models/', '')
+                st.success(f"✅ Tìm thấy: {model_name}")
+                found_models.append(model_name)
+        
+        if not found_models:
+            st.error("❌ Không tìm thấy model nào hỗ trợ Chat! (Có thể Key bị lỗi hoặc chưa kích hoạt)")
+        else:
+            st.write("---")
+            st.write("### 🧪 Test thử Chat với model đầu tiên:")
+            # Tự động chọn cái đầu tiên tìm được để chạy thử
+            test_model_name = found_models[0]
+            st.write(f"Đang thử gọi model: `{test_model_name}`")
             
-            # AI Trả lời
-            response = model.generate_content(prompt)
-            st.chat_message("ai").write(response.text)
-            st.session_state.chat_history.append(("ai", response.text))
+            try:
+                # Thử gọi không dùng system_instruction trước để loại trừ lỗi thư viện
+                model = genai.GenerativeModel(test_model_name)
+                response = model.generate_content("Chào bạn, bạn có khỏe không?")
+                st.balloons()
+                st.write("🤖 AI Trả lời thành công:", response.text)
+                st.success(f"CHÚC MỪNG! Tên model chính xác bạn cần dùng là: '{test_model_name}'")
+            except Exception as e_chat:
+                st.error(f"Lỗi khi chat thử: {e_chat}")
 
     except Exception as e:
-        st.error(f"Có lỗi xảy ra: {e}")
+        st.error(f"Lỗi kết nối nghiêm trọng: {e}")
+        st.warning("Gợi ý: Kiểm tra lại file requirements.txt xem đã có dòng 'google-generativeai>=0.7.0' chưa?")
